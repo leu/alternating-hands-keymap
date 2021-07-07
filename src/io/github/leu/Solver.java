@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
 
 public class Solver {
@@ -14,6 +15,11 @@ public class Solver {
     public static int bestScore = 0;
     public static HashSet<Character> bestSetA = new HashSet<>();
     public static HashSet<Character> bestSetB = new HashSet<>();
+    private static HashSet<HashSet<Character>> checkedKeymaps = new HashSet<>();
+
+    public static void main(String[] args) {
+        findOptimalKeymap();
+    }
 
     public static void findOptimalKeymap() {
         Path path = FileSystems.getDefault().getPath("C:\\Users\\Hybri\\IdeaProjects\\scrawler-keymap-solver\\lib\\pairs.json");
@@ -26,12 +32,12 @@ public class Solver {
         pairFrequencies = new JSONArray(content);
 
         HashSet<Character> alphabetSet = new HashSet<>();
-        HashSet<Character> emptySet = new HashSet<>();
-        char[] alphabetArray = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+        HashSet<Character> startingSet = new HashSet<>(Collections.singletonList('h'));
+        char[] alphabetArray = "abcdefgijklmnopqrstuvwxyz".toCharArray();
         for (char letter : alphabetArray) {
             alphabetSet.add(letter);
         }
-        findNLetters(13, alphabetSet, emptySet);
+        findNLetters(12, alphabetSet, startingSet);
 
         System.out.println(bestSetA + "\n");
         System.out.println(bestSetB + "\n");
@@ -53,19 +59,21 @@ public class Solver {
             }
         } else {
             evaluateScore(availableLetters, usedLetters);
+            checkedKeymaps.add(availableLetters);
+            checkedKeymaps.add(usedLetters);
         }
     }
 
     private static void evaluateScore(HashSet<Character> setA, HashSet<Character> setB) {
+        if (checkedKeymaps.contains(setA) || checkedKeymaps.contains(setB)) {
+            return;
+        }
         int score = 0;
         for (int i = 0; i < pairFrequencies.length(); i++) {
             JSONArray pairFrequency = pairFrequencies.getJSONArray(i);
             String lettersPair = pairFrequency.getString(0);
-            char letterA = lettersPair.charAt(0);
-            char letterB = lettersPair.charAt(1);
-            int frequency = pairFrequency.getInt(1);
-            if (setA.contains(letterA) != setA.contains(letterB)) {
-                score += frequency;
+            if (setA.contains(lettersPair.charAt(0)) != setA.contains(lettersPair.charAt(1))) {
+                score += pairFrequency.getInt(1);
             }
         }
         if (score > bestScore) {
