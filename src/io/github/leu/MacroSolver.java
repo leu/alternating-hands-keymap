@@ -17,20 +17,15 @@ public class MacroSolver {
     public static long bestScore = 0;
     public static ArrayList<Character> bestListA = new ArrayList<>();
     public static char[] alphabetArray = "bcdefghijklmnopqrstuvwxyz".toCharArray();
+    //public static int counter = 0;
 
     public static void main(String[] args) {
         findOptimalKeymap();
     }
 
     public static void findOptimalKeymap() {
-        Path path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/pairs.json");
-        String content = "[]";
-        try {
-            content = Files.readString(path, StandardCharsets.US_ASCII);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        pairFrequencies = new JSONArray(content);
+        Long startTime = System.nanoTime();
+        initialiseFrequencies();
 
         int[] letterPositions = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
         char[] charList = new char[13];
@@ -45,10 +40,11 @@ public class MacroSolver {
             }
             evaluateScore(charArray);
             stepPosition(letterPositions, 11);
-            for (int letter : letterPositions) {
-                System.out.print(letter + " ");
-            }
-            System.out.println("\n");
+            //counter++;
+//            for (int letter : letterPositions) {
+//                System.out.print(letter + " ");
+//            }
+//            System.out.println("\n");
         }
         System.out.println(bestListA + "\n");
         ArrayList<Character> bestListB = new ArrayList<>();
@@ -60,6 +56,20 @@ public class MacroSolver {
         }
         System.out.println(bestListB);
         System.out.println(bestScore);
+        Long endTime = System.nanoTime();
+        System.out.println((endTime - startTime)/1000000000);
+        //System.out.println(counter);
+    }
+
+    private static void initialiseFrequencies() {
+        Path path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/pairs.json");
+        String content = "[]";
+        try {
+            content = Files.readString(path, StandardCharsets.US_ASCII);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        pairFrequencies = new JSONArray(content);
     }
 
     private static void stepPosition(int[] letterPositions, int i) {
