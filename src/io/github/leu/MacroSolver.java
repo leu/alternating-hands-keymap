@@ -7,24 +7,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 public class MacroSolver {
     public static JSONArray pairFrequencies;
-    public static long bestScore = 0;
-    public static ArrayList<Character> bestListA = new ArrayList<>();
+    public static JSONArray frequencies;
+    public static PriorityQueue<KeySet> bestKeymaps = new PriorityQueue<>(new KeySetComparator());
     public static char[] alphabetArray = "bcdefghijklmnopqrstuvwxyz".toCharArray();
-    //public static int counter = 0;
 
     public static void main(String[] args) {
         findOptimalKeymap();
     }
 
     public static void findOptimalKeymap() {
-        Long startTime = System.nanoTime();
         initialiseFrequencies();
 
         int[] letterPositions = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -40,25 +35,13 @@ public class MacroSolver {
             }
             evaluateScore(charArray);
             stepPosition(letterPositions, 11);
-            //counter++;
-//            for (int letter : letterPositions) {
-//                System.out.print(letter + " ");
-//            }
-//            System.out.println("\n");
         }
-        System.out.println(bestListA + "\n");
-        ArrayList<Character> bestListB = new ArrayList<>();
-        for (char letter : alphabetArray) {
-            bestListB.add(letter);
+
+        for (int i = 0; i < 30; i++) {
+            KeySet keyset = bestKeymaps.poll();
+            assert keyset != null;
+            System.out.println(keyset.leftSideKeys.toString() + " " + keyset.score + " " + keyset.getTotalFrequency());
         }
-        for (Character letter : bestListA) {
-            bestListB.remove(letter);
-        }
-        System.out.println(bestListB);
-        System.out.println(bestScore);
-        Long endTime = System.nanoTime();
-        System.out.println((endTime - startTime)/1000000000);
-        //System.out.println(counter);
     }
 
     private static void initialiseFrequencies() {
@@ -70,6 +53,15 @@ public class MacroSolver {
             e.printStackTrace();
         }
         pairFrequencies = new JSONArray(content);
+
+        path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/letter_count.json");
+        content = "[]";
+        try {
+            content = Files.readString(path, StandardCharsets.US_ASCII);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        frequencies = new JSONArray(content);
     }
 
     private static void stepPosition(int[] letterPositions, int i) {
@@ -81,20 +73,58 @@ public class MacroSolver {
         }
     }
 
-    private static void evaluateScore(ArrayList<Character> listA) {
+    private static void evaluateScore(ArrayList<Character> keymapList) {
         long score = 0L;
         for (int i = 0; i < pairFrequencies.length(); i++) {
             JSONArray pairFrequency = pairFrequencies.getJSONArray(i);
             String lettersPair = pairFrequency.getString(0);
-            if (listA.contains(lettersPair.charAt(0)) != listA.contains(lettersPair.charAt(1))) {
+            if (keymapList.contains(lettersPair.charAt(0)) != keymapList.contains(lettersPair.charAt(1))) {
                 score += pairFrequency.getLong(1);
             }
         }
-        if (score > bestScore) {
-            bestScore = score;
-            bestListA = listA;
-            System.out.println(bestListA + "\n");
-            System.out.println(bestScore);
+        bestKeymaps.add(new KeySet(keymapList, score));
+        if (bestKeymaps.size() > 30) {
+            bestKeymaps.poll();
+        }
+
+//        for (KeyMap keymap : bestKeymaps) {
+//            System.out.println(keymap.leftSideKeys.toString() + " " + keymap.score);
+//        }
+//        System.out.println();
+    }
+}
+
+class KeySet {
+    ArrayList<Character> leftSideKeys;
+    long score;
+
+    KeySet(ArrayList<Character> leftSideKeys, long score) {
+        this.leftSideKeys = leftSideKeys;
+        this.score = score;
+    }
+
+    double getTotalFrequency() {
+        double totalFrequency = 0.0;
+        for (int i = 0; i < MacroSolver.frequencies.length(); i++) {
+            JSONArray letterFrequency = MacroSolver.frequencies.getJSONArray(i);
+            for (Character letter : leftSideKeys) {
+                if (letter.toString().equals(letterFrequency.getString(0))) {
+                    totalFrequency += letterFrequency.getDouble(1);
+                }
+            }
+        }
+        return totalFrequency;
+    }
+}
+
+class KeySetComparator implements Comparator<KeySet> {
+    public int compare(KeySet o1, KeySet o2) {
+        if (o1.score < o2.score) {
+            return -1;
+        } else if (o1.score == o2.score) {
+            return 0;
+        } else {
+            return 1;
         }
     }
 }

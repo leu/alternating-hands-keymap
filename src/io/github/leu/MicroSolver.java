@@ -7,14 +7,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.PriorityQueue;
 
 public class MicroSolver {
     public static JSONArray pairFrequencies;
-    public static long bestScore = 0;
-    public static ArrayList<Character> bestListA = new ArrayList<>();
-    public static ArrayList<Character> listA = new ArrayList<>();
+    public static JSONArray frequencies;
+    public static ArrayList<Character> bestList = new ArrayList<>();
+    public static ArrayList<Character> alphabetList = new ArrayList<>();
+    public static PriorityQueue<KeyMap> bestKeymaps = new PriorityQueue<>(new KeyMapComparator());
 
     public static void main(String[] args) {
         findOptimalKeymap();
@@ -22,14 +26,45 @@ public class MicroSolver {
 
     private static void findOptimalKeymap() {
         initialiseFrequencies();
-        char[] arrayA = "aeghijkoquxyz".toCharArray(); //"aeghijkoquxyz" "bcdflmnprstvw"
+        char[] arrayA = "aeghijkopquyz".toCharArray(); //"aeghijkopquyz" "bcdflmnrstvwx" [a, e, g, h, i, j, k, o, p, q, u, y, z]
         for (char letter : arrayA) {
-            listA.add(letter);
+            alphabetList.add(letter);
         }
         for (int i = 0; i < 13; i++) {
-            bestListA.add('a');
+            bestList.add('a');
         }
         recursiveLayoutCheck(new int[13], 0, new int[]{3, 3, 3, 4});
+        double[] fingerFrequencies = new double[4];
+        for (int i = 0; i < 20; i++) {
+            for (int j = 0; j < 4; j++) {
+                fingerFrequencies[j] = 0;
+            }
+            KeyMap keymap = bestKeymaps.poll();
+            assert keymap != null;
+            System.out.println(keymap.layout.toString());
+            for (int j = 0; j < 4; j++) {
+                for (Character letter : keymap.layout.get(j)) {
+                    for (int k = 0; k < frequencies.length(); k++) {
+                        JSONArray letterFrequency = frequencies.getJSONArray(k);
+                        if (letterFrequency.getString(0).equals(String.valueOf(letter))) {
+                            System.out.print(letterFrequency.getDouble(1));
+                            fingerFrequencies[j] += letterFrequency.getDouble(1);
+                            System.out.print(" ");
+                        }
+                    }
+                }
+                System.out.print("   ");
+            }
+            System.out.println();
+            DecimalFormat df = new DecimalFormat("##.##");
+            for (int j = 0; j < 4; j++) {
+                System.out.print(df.format(fingerFrequencies[j]) + (j == 0 ? "             " : "              "));
+            }
+            System.out.println("\n" + keymap.score + "\n");
+        }
+//        for (KeyMap keymap : bestKeymaps) {
+//            System.out.println(keymap.layout.toString() + " " + keymap.score);
+//        }
     }
 
     private static void recursiveLayoutCheck(int[] positions, int n, int[] groupNumAvailable) {
@@ -67,6 +102,15 @@ public class MicroSolver {
             e.printStackTrace();
         }
         pairFrequencies = new JSONArray(content);
+
+        path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/letter_count.json");
+        content = "[]";
+        try {
+            content = Files.readString(path, StandardCharsets.US_ASCII);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        frequencies = new JSONArray(content);
     }
 
     private static void evaluateScore(int[] positions) {
@@ -77,7 +121,7 @@ public class MicroSolver {
             char letterA = lettersPair.charAt(0);
             char letterB = lettersPair.charAt(1);
             int letterACategory, letterBCategory;
-            if (listA.contains(letterA) && listA.contains(letterB)) {
+            if (alphabetList.contains(letterA) && alphabetList.contains(letterB)) {
                 letterACategory = setLetterPositionCategory(letterA, positions);
                 letterBCategory = setLetterPositionCategory(letterB, positions);
                 if (letterACategory != letterBCategory) {
@@ -85,29 +129,57 @@ public class MicroSolver {
                 }
             }
         }
-        if (score > bestScore) {
-            bestScore = score;
-            ArrayList<HashSet<Character>> bestLayout = new ArrayList<>();
-            for (int i = 0; i < 4; i++) {
-                bestLayout.add(new HashSet<>());
+
+        ArrayList<HashSet<Character>> layout = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            layout.add(new HashSet<>());
+        }
+        for (int i = 0; i < 13; i++) {
+            layout.get(positions[i]).add(alphabetList.get(i));
+        }
+
+        //if (bestKeymaps.size() == 0 || bestKeymaps.stream().anyMatch(a -> !layout.get(3).containsAll(a.layout.get(3)))) {
+//        long finalScore = score;
+//        if (bestKeymaps.size() == 0 || bestKeymaps.stream().anyMatch(a -> a.score != finalScore)) {
+        if (bestKeymaps.size() == 0 || bestKeymaps.stream().noneMatch(a -> layout.get(3).containsAll(a.layout.get(3)))) {
+            bestKeymaps.add(new KeyMap(layout, score));
+            if (bestKeymaps.size() > 20) {
+                bestKeymaps.poll();
             }
-            for (int i = 0; i < 13; i++) {
-                bestLayout.get(positions[i]).add(listA.get(i));
-            }
-            System.out.println(bestLayout);
-            System.out.println(bestScore);
         }
     }
 
     private static int setLetterPositionCategory(char letter, int[] positions) {
-        if (positions[listA.indexOf(letter)] < 3) {
+        if (positions[alphabetList.indexOf(letter)] < 3) {
             return 1;
-        } else if (positions[listA.indexOf(letter)] < 6 && positions[listA.indexOf(letter)] >= 3) {
+        } else if (positions[alphabetList.indexOf(letter)] < 6 && positions[alphabetList.indexOf(letter)] >= 3) {
             return 2;
-        } else if (positions[listA.indexOf(letter)] < 9 && positions[listA.indexOf(letter)] >= 6) {
+        } else if (positions[alphabetList.indexOf(letter)] < 9 && positions[alphabetList.indexOf(letter)] >= 6) {
             return 3;
         } else {
             return 4;
+        }
+    }
+}
+
+class KeyMap {
+    ArrayList<HashSet<Character>> layout;
+    long score;
+
+    KeyMap(ArrayList<HashSet<Character>> layout, long score) {
+        this.layout = layout;
+        this.score = score;
+    }
+}
+
+class KeyMapComparator implements Comparator<KeyMap> {
+    public int compare(KeyMap o1, KeyMap o2) {
+        if (o1.score < o2.score) {
+            return -1;
+        } else if (o1.score == o2.score) {
+            return 0;
+        } else {
+            return 1;
         }
     }
 }
