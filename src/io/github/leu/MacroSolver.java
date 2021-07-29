@@ -40,7 +40,7 @@ public class MacroSolver {
         for (int i = 0; i < 30; i++) {
             KeySet keyset = bestKeymaps.poll();
             assert keyset != null;
-            System.out.println(keyset.leftSideKeys.toString() + " " + keyset.score + " " + keyset.getTotalFrequency());
+            System.out.println(keyset.leftSideKeys.toString() + /*" " + keyset.score +*/ " " + Math.round(100.0*keyset.getTotalFrequency())/100.0);
         }
     }
 

@@ -26,14 +26,14 @@ public class MicroSolver {
 
     private static void findOptimalKeymap() {
         initialiseFrequencies();
-        char[] arrayA = "aeghijkopquyz".toCharArray(); //"aeghijkopquyz" "bcdflmnrstvwx" [a, e, g, h, i, j, k, o, p, q, u, y, z]
+        char[] arrayA = "aeghijopquxyz".toCharArray(); //"aeghijopquxyz"  "bcdfklmnrstvw"  [a, e, g, h, i, j, o, p, q, u, x, y, z]
         for (char letter : arrayA) {
             alphabetList.add(letter);
         }
         for (int i = 0; i < 13; i++) {
             bestList.add('a');
         }
-        recursiveLayoutCheck(new int[13], 0, new int[]{3, 3, 3, 4});
+        recursiveLayoutCheck(new int[13], 0, new int[]{2, 3, 4, 4});
         double[] fingerFrequencies = new double[4];
         for (int i = 0; i < 20; i++) {
             for (int j = 0; j < 4; j++) {
@@ -58,9 +58,9 @@ public class MicroSolver {
             System.out.println();
             DecimalFormat df = new DecimalFormat("##.##");
             for (int j = 0; j < 4; j++) {
-                System.out.print(df.format(fingerFrequencies[j]) + (j == 0 ? "             " : "              "));
+                System.out.print(df.format(fingerFrequencies[j]) + " ");
             }
-            System.out.println("\n" + keymap.score + "\n");
+            System.out.println("\n" + Math.round(100.0 * (fingerFrequencies[3] - fingerFrequencies[2])) / 100.0 + "\n" + keymap.score + "\n");
         }
 //        for (KeyMap keymap : bestKeymaps) {
 //            System.out.println(keymap.layout.toString() + " " + keymap.score);
@@ -138,10 +138,29 @@ public class MicroSolver {
             layout.get(positions[i]).add(alphabetList.get(i));
         }
 
-        //if (bestKeymaps.size() == 0 || bestKeymaps.stream().anyMatch(a -> !layout.get(3).containsAll(a.layout.get(3)))) {
-//        long finalScore = score;
-//        if (bestKeymaps.size() == 0 || bestKeymaps.stream().anyMatch(a -> a.score != finalScore)) {
-        if (bestKeymaps.size() == 0 || bestKeymaps.stream().noneMatch(a -> layout.get(3).containsAll(a.layout.get(3)))) {
+        double[] fingerFrequencies = new double[4];
+        for (int j = 0; j < 4; j++) {
+            fingerFrequencies[j] = 0;
+        }
+
+        for (int j = 0; j < 4; j++) {
+            for (Character letter : layout.get(j)) {
+                for (int k = 0; k < frequencies.length(); k++) {
+                    JSONArray letterFrequency = frequencies.getJSONArray(k);
+                    if (letterFrequency.getString(0).equals(String.valueOf(letter))) {
+                        //System.out.print(letterFrequency.getDouble(1));
+                        fingerFrequencies[j] += letterFrequency.getDouble(1);
+                        //System.out.print(" ");
+                    }
+                }
+            }
+            //System.out.print("   ");
+        }
+        //System.out.println();
+
+        if (fingerFrequencies[0] < fingerFrequencies[1] && fingerFrequencies[1] < fingerFrequencies[2] && fingerFrequencies[1] < fingerFrequencies[3]
+                && fingerFrequencies[3] < 25 && fingerFrequencies[3] > 15 && fingerFrequencies[2] > 15 && fingerFrequencies[2] < 25 && fingerFrequencies[0] < 5
+                && (bestKeymaps.size() == 0 || bestKeymaps.stream().noneMatch(a -> layout.get(3).containsAll(a.layout.get(3))))) {
             bestKeymaps.add(new KeyMap(layout, score));
             if (bestKeymaps.size() > 20) {
                 bestKeymaps.poll();
