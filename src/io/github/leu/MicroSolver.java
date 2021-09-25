@@ -83,7 +83,7 @@ public class MicroSolver {
     }
 
     private static void initialiseFrequencies() {
-        Path path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/pairs.json");
+        Path path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/tif_keymap/lib/pairs.json");
         String content = "[]";
         try {
             content = Files.readString(path, StandardCharsets.US_ASCII);
@@ -92,7 +92,7 @@ public class MicroSolver {
         }
         pairFrequencies = new JSONArray(content);
 
-        path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/letter_count.json");
+        path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/tif_keymap/lib/letter_count.json");
         content = "[]";
         try {
             content = Files.readString(path, StandardCharsets.US_ASCII);

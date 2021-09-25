@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/scrawler-keymap-solver.iml" filepath="$PROJECT_DIR$/tif-keymap-solver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tif_keymap.iml" filepath="$PROJECT_DIR$/tif_keymap.iml" />
     </modules>
   </component>
 </project>
