@@ -40,12 +40,18 @@ public class MacroSolver {
         for (int i = 0; i < 30; i++) {
             KeySet keyset = bestKeymaps.poll();
             assert keyset != null;
-            System.out.println(keyset.leftSideKeys.toString() + /*" " + keyset.score +*/ " " + Math.round(100.0*keyset.getTotalFrequency())/100.0);
+            System.out.println(keyset.leftSideKeys.toString() + " " + keyset.score + " " + Math.round(100.0*keyset.getTotalFrequency())/100.0);
         }
+        long score = 0L;
+        for (int i = 0; i < pairFrequencies.length(); i++) {
+            JSONArray pairFrequency = pairFrequencies.getJSONArray(i);
+            score += pairFrequency.getLong(1);
+        }
+        System.out.println(score);
     }
 
     private static void initialiseFrequencies() {
-        Path path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/pairs.json");
+        Path path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/tif-keymap-solver/lib/pairs.json");
         String content = "[]";
         try {
             content = Files.readString(path, StandardCharsets.US_ASCII);
@@ -54,7 +60,7 @@ public class MacroSolver {
         }
         pairFrequencies = new JSONArray(content);
 
-        path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/scrawler-keymap-solver/lib/letter_count.json");
+        path = FileSystems.getDefault().getPath("/home/leu/Documents/programming/java/tif-keymap-solver/lib/letter_count.json");
         content = "[]";
         try {
             content = Files.readString(path, StandardCharsets.US_ASCII);
@@ -78,7 +84,7 @@ public class MacroSolver {
         for (int i = 0; i < pairFrequencies.length(); i++) {
             JSONArray pairFrequency = pairFrequencies.getJSONArray(i);
             String lettersPair = pairFrequency.getString(0);
-            if (keymapList.contains(lettersPair.charAt(0)) != keymapList.contains(lettersPair.charAt(1))) {
+            if (keymapList.contains(lettersPair.charAt(0)) == keymapList.contains(lettersPair.charAt(1))) {
                 score += pairFrequency.getLong(1);
             }
         }
@@ -86,11 +92,6 @@ public class MacroSolver {
         if (bestKeymaps.size() > 30) {
             bestKeymaps.poll();
         }
-
-//        for (KeyMap keymap : bestKeymaps) {
-//            System.out.println(keymap.leftSideKeys.toString() + " " + keymap.score);
-//        }
-//        System.out.println();
     }
 }
 
